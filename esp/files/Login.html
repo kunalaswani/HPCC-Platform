@@ -36,6 +36,13 @@
                 border: 1px solid #bfbfbf;
             }
 
+            label {
+                display: inline-block;
+                text-align: center;
+                margin-bottom: 20px;
+                width: 300px;
+            }
+
             .login form {
                 margin: auto;
                 width: 300px;
@@ -87,6 +94,7 @@
                     <form method="POST" action="/esp/login">
                         <input type="text" name="username" placeholder="username" class="loginStr"></input>
                         <input type="password" name="password" placeholder="password" class="loginStr"></input>
+                        <label id="hidden_msg" class="loginStr" style="color:red;display:none;">Invalid username or password, try again.</label>
                         <button class="loginStr" id="button" type="submit">Login</button>
                     </form>
                 </div>
@@ -101,6 +109,13 @@
             } else {
                 alert("ECL Watch requires cookies enabled to continue.");
             }
+
+            var element = document.getElementById('hidden_msg');
+
+            if (document.cookie.indexOf("ESPAuthenticationMSG") <0){
+            } else{
+                element.style.display = null;
+                }
         </script>
     </body>
 </html>
