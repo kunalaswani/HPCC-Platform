@@ -38,7 +38,7 @@ define([
     "src/ESPQuery",
     "src/ESPUtil",
     "src/Utility",
-    "hpcc/SelectionGridWidget",
+    "src/ws_account",
 
     "dojo/text!../templates/QuerySetQueryWidget.html",
 
@@ -61,7 +61,7 @@ define([
 ], function (declare, lang, i18n, nlsHPCC, on, topic, arrayUtil, domForm, topic,
                 registry, Menu, MenuItem, MenuSeparator, PopupMenuItem,
                 selector,
-                _TabContainerWidget, DelayLoadWidget, WsWorkunits, ESPQuery, ESPUtil, Utility, SelectionGridWidget,
+                _TabContainerWidget, DelayLoadWidget, WsWorkunits, ESPQuery, ESPUtil, Utility, WsAccount,
                 template) {
     return declare("QuerySetQueryWidget", [_TabContainerWidget], {
         templateString: template,
@@ -78,6 +78,7 @@ define([
 
         initalized: false,
         loaded: false,
+        userName: null,
 
         buildRendering: function (args) {
             this.inherited(arguments);
@@ -109,6 +110,16 @@ define([
 
         _onDownloadToList: function (event) {
             this.downloadToListDialog.show();
+        },
+
+        _onMine: function (event) {
+            if (event) {
+                this.filter.setValue(this.id + "PublishedBy", this.userName);
+                this.filter._onFilterApply();
+            } else {
+                this.filter._onFilterClear();
+                this.filter._onFilterApply();
+            }
         },
 
          _buildCSV: function (event) {
@@ -168,6 +179,13 @@ define([
             });
             topic.subscribe("hpcc/ecl_wu_published", function (topic) {
                 context.refreshGrid();
+            });
+
+            WsAccount.MyAccount({
+            }).then(function (response) {
+                if (lang.exists("MyAccountResponse.username", response)) {
+                    context.userName = response.MyAccountResponse.username;
+                }
             });
         },
 
