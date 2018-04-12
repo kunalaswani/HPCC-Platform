@@ -7,3 +7,4 @@ node_modules
 esp/src/lib
 esp/src/build
 .vscode/
+esp/src/lws.config.js
