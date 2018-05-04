@@ -57,17 +57,26 @@ public:
 
     bool attachServiceToDali() override
     {
+        SpinBlock b(m_daliDetachSpinLock);
         m_isDetachedFromDali = false;
         return true;
     }
 
     bool detachServiceFromDali() override
     {
+        SpinBlock b(m_daliDetachSpinLock);
         m_isDetachedFromDali = true;
         return true;
     }
+
+    bool isDetachedFromDali()
+    {
+        SpinBlock b(m_daliDetachSpinLock);
+        return m_isDetachedFromDali;
+    }
 private:
-    bool m_isDetachedFromDali;
+    bool m_isDetachedFromDali = false;
+    SpinLock m_daliDetachSpinLock;
 };
 
 #endif //_ESPWIZ_WsESDLConfig_HPP__
