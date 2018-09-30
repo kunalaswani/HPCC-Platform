@@ -119,8 +119,11 @@ define([
                 this.fileFormat = registry.byId(this.id + "FileFormat");
                 this.slaveLogs = registry.byId(this.id + "SlaveLogs");
                 this.includeSlaveLogsCheckbox = registry.byId(this.id + "IncludeSlaveLogsCheckbox");
+                this.reportIncludeSlaveLogsCheckbox = registry.byId(this.id + "ReportIncludeSlaveLogsCheckbox");
                 this.logsForm = registry.byId(this.id + "LogsForm");
                 this.allowOnlyNumber = registry.byId(this.id + "AllowOnlyNumber");
+                this.reportSendEmailCheckbox = registry.byId(this.id + "ReportSendEmailCheckbox");
+                this.reportEmailSubject = registry.byId(this.id + "ReportEmailSubject");
 
                 this.infoGridWidget = registry.byId(this.id + "InfoContainer");
                 this.zapDialog = registry.byId(this.id + "ZapDialog");
@@ -244,11 +247,15 @@ define([
                 }).then(function (response) {
                     context.zapDialog.show();
                     if (lang.exists("WUGetZAPInfoResponse", response)) {
+                        context.updateInput("ReportEmailAddressTo", null, response.WUGetZAPInfoResponse.EmailTo);
+                        context.updateInput("ReportEmailAddressFrom", null, response.WUGetZAPInfoResponse.EmailFrom);
                         context.updateInput("ZapWUID", null, response.WUGetZAPInfoResponse.WUID);
                         context.updateInput("BuildVersion", null, response.WUGetZAPInfoResponse.BuildVersion);
                         context.updateInput("ESPIPAddress", null, response.WUGetZAPInfoResponse.ESPIPAddress);
                         context.updateInput("ThorIPAddress", null, response.WUGetZAPInfoResponse.ThorIPAddress);
 
+                        context.ReportEmailAddressTo = response.WUGetZAPInfoResponse.EmailTo;
+                        context.ReportEmailAddressFrom = response.WUGetZAPInfoResponse.EmailFrom;
                         context.buildVersion = response.WUGetZAPInfoResponse.BuildVersion;
                         context.espIPAddress = response.WUGetZAPInfoResponse.ESPIPAddress;
                         context.thorIPAddress = response.WUGetZAPInfoResponse.ThorIPAddress;
