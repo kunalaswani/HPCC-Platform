@@ -153,9 +153,11 @@ define([
 
        _onCloseFilePermissions: function () {
         this.filePermissionDialog.hide();
+        this.nameSelect.reset();
+        this.usersSelect.set("value","");
+        this.groupsSelect.set("value","");
        },
         _onCheckFilePermissions: function () {
-            var context = this;
             this.filePermissionDialog.show();
         },
         _onCheckFileSubmit: function () {
@@ -491,6 +493,9 @@ define([
             });
 
             this.refreshActionState();
+            this.filePermissionDialog.on("cancel", function(){
+                context._onCloseFilePermissions();
+            });
         },
 
         //  Groups  ---
