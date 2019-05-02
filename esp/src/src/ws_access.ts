@@ -117,7 +117,32 @@ var ResourcesStore = declare([Memory], {
             }
         }).then(lang.hitch(this, function (response) {
             if (lang.exists("ResourcesResponse.Resources.Resource", response)) {
-                return response.ResourcesResponse.Resources.Resource;
+                var alreadyExists = false;
+                var results =  response.ResourcesResponse.Resources.Resource;
+                var newresults = [];
+                //var dups = [];
+                // dups.push({
+                //     name: "hpccinternal"
+                //     //data: []
+                // })
+                arrayUtil.forEach(results, function(row, idx){
+                    if (row.name.indexOf("hpccinternal") > -1 && alreadyExists === false) {
+                        newresults.push({
+                            name: row.name,
+                            __hpcc_parent: true
+                        });
+                        alreadyExists = true;
+                    }
+                });
+
+                arrayUtil.forEach(results, function(row, idx){
+                    if (row.name.indexOf("hpccinternal")) {
+                        newresults.push(row);
+                    }
+                });
+
+                //newresults.push(dups);
+                return newresults;
             }
             return [];
         }));
