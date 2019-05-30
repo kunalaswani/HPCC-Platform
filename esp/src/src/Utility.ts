@@ -107,6 +107,14 @@ export function convertedSize(intsize: number): string {
     }
 }
 
+export function convertedGBSize(intsize: number): string {
+    if (intsize === null || intsize === undefined) {
+        return "";
+    } else{
+        return (intsize / 1073741824).toFixed(2);
+    }
+}
+
 export function unitTest(size, unit) {
     var nsIndex = size.indexOf(unit);
     if (nsIndex !== -1) {

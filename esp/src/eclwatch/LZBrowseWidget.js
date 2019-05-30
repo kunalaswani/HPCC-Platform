@@ -708,12 +708,12 @@ define([
                             }
                         }),
                         filesize: {
-                            label: this.i18n.Size, width: 108, sortable: false,
+                            label: this.i18n.SizeInGB, width: 108, sortable: false,
                             formatter: function (fsize, row) {
                                 if (!fsize || fsize === -1) {
                                     return ""
                                 }
-                                return Utility.convertedSize(fsize);
+                                return Utility.convertedGBSize(fsize);
                             }
                         },
                         modifiedtime: { label: this.i18n.Date, width: 180, sortable: false }

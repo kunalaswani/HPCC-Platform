@@ -647,6 +647,7 @@ define({root:
     ShowProcessesUsingFilter: "Show Processes Using Filter",
     ShowSVG: "Show SVG",
     Size: "Size",
+    SizeInGB: "Size (GB)",
     Skew: "Skew",
     SkewNegative: "Skew(-)",
     SkewPositive: "Skew(+)",

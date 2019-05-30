@@ -661,9 +661,11 @@ define([
                         NodeGroup: { label: this.i18n.Cluster, width: 108 },
                         RecordCount: { label: this.i18n.Records, width: 85 },
                         IntSize: {
-                            label: this.i18n.Size, width: 100,
+                            label: this.i18n.SizeInGB,
+                            titlr
+                            width: 100,
                             formatter: function (intsize, row) {
-                                return Utility.convertedSize(intsize);
+                                return Utility.convertedGBSize(intsize);
                             }
                         },
                         Parts: { label: this.i18n.Parts, width: 60 },
