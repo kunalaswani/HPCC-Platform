@@ -325,8 +325,10 @@ define([
                         this.fileHistoryWidget.init({
                             Name: this.logicalFile.Name
                         });
+                    } else if (this.dfuWorkunitWidget){
+                        alert ("helloworld")
                     } else {
-                        currSel.init(currSel.params);
+                        alert("keep trying")
                     }
                 }
             },
@@ -425,6 +427,12 @@ define([
                     }
                 } else if (name === "RecordSize" && newValue === "0") {
                     this.updateInput("RecordSize", oldValue, this.i18n.NoPublishedSize);
+                // } else if (newValue.Superfiles){
+                //     if (newValue.ContentType === "key") {
+                //         alert ("working");
+                //     } else {
+                //         alert ("not working");
+                //     }
                 }
             },
 
