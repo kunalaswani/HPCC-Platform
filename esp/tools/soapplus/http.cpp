@@ -495,7 +495,19 @@ HttpClient::HttpClient(IProperties* globals, const char* url, const char* inname
         {
 #ifdef _USE_OPENSSL
             if(m_ssctx.get() == NULL)
-                m_ssctx.setown(createSecureSocketContext(ClientSocket));
+            {
+                Owned<IPropertyTree> cfgtree = nullptr;
+                if (globals->hasProp("cfg"))
+                {
+                    const char* cfg = globals->queryProp("cfg");
+                    if (cfg && *cfg)
+                        cfgtree.setown(createPTreeFromXMLFile(cfg));
+                }
+                if (cfgtree)
+                    m_ssctx.setown(createSecureSocketContextEx2(cfgtree, ClientSocket));
+                else
+                    m_ssctx.setown(createSecureSocketContext(ClientSocket));
+            }
 #else
         throw MakeStringException(-1, "HttpClient: failure to create SSL socket - OpenSSL not enabled in build");
 #endif
@@ -1307,7 +1319,7 @@ int HttpClient::sendStressRequest(StringBuffer& request, HttpStat* stat, Owned<C
         {
             while (1)
             {
-                len = sock->receive(recvbuf, 2047);
+                len = sock->receive(recvbuf, 0, 2047);
                 if (len > 0)
                 {
                     total_len += len;
@@ -1335,7 +1347,7 @@ int HttpClient::sendStressRequest(StringBuffer& request, HttpStat* stat, Owned<C
             unsigned int searchStart = 0;
             while (1)
             {
-                len = sock->receive(recvbuf, 1, 2047);
+                len = sock->receive(recvbuf, 0, 2047);
                 if (len > 0)
                 {
                     total_len += len;

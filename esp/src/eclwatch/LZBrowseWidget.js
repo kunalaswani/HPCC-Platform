@@ -546,6 +546,7 @@ define([
                 this.filter.on("apply", function (evt) {
                     context.landingZonesGrid.clearSelection();
                     context.refreshHRef();
+                    context.landingZonesGrid._currentPage = 0;
                     context.refreshGrid();
                 });
                 this.sprayFixedDestinationSelect.init({
@@ -708,11 +709,12 @@ define([
                         }),
                         filesize: {
                             label: this.i18n.Size, width: 108, sortable: false,
-                            formatter: function (fsize, row) {
-                                if (!fsize || fsize === -1) {
+                            renderCell: function (object, value, node, options) {
+                                domClass.add(node, "justify-right");
+                                if (value === -1){
                                     return ""
                                 }
-                                return Utility.convertedSize(fsize);
+                                node.innerText = Utility.convertedSize(value);
                             }
                         },
                         modifiedtime: { label: this.i18n.Date, width: 180, sortable: false }

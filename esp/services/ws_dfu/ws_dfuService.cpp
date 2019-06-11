@@ -6018,7 +6018,7 @@ SecAccessFlags translateToSecAccessFlags(CSecAccessType from)
     }
 }
 
-void CWsDfuEx::dFUFileAccessCommon(IEspContext &context, const CDfsLogicalFileName &lfn, const char *requestId, unsigned expirySecs, bool returnTextResponse, IEspDFUFileAccessInfo &accessInfo)
+void CWsDfuEx::dFUFileAccessCommon(IEspContext &context, const CDfsLogicalFileName &lfn, SessionId clientSessionId, const char *requestId, unsigned expirySecs, bool returnTextResponse, unsigned lockTimeoutMs, IEspDFUFileAccessResponse &resp)
 {
     StringBuffer fileName;
     lfn.get(fileName, false, true);
@@ -6037,7 +6037,7 @@ void CWsDfuEx::dFUFileAccessCommon(IEspContext &context, const CDfsLogicalFileNa
 
     checkLogicalName(fileName, userDesc, true, false, false, nullptr); // check for read permissions
 
-    Owned<IDistributedFile> df = queryDistributedFileDirectory().lookup(fileName, userDesc, false, false, true); // lock super-owners
+    Owned<IDistributedFile> df = queryDistributedFileDirectory().lookup(fileName, userDesc, false, false, true, nullptr, lockTimeoutMs); // lock super-owners
     if (!df)
         throw MakeStringException(ECLWATCH_FILE_NOT_EXIST,"Cannot find file '%s'.", fileName.str());
 
@@ -6061,6 +6061,8 @@ void CWsDfuEx::dFUFileAccessCommon(IEspContext &context, const CDfsLogicalFileNa
     bool secure;
     getFileDafilesrvConfiguration(keyPairName, port, secure, fileName, groups);
 
+    IEspDFUFileAccessInfo &accessInfo = resp.updateAccessInfo();
+
     Owned<IPropertyTree> metaInfo = createDFUFileMetaInfo(fileName, fileDesc, requestId, "READ", expirySecs, userDesc, keyPairName, port, secure, maxFileAccessExpirySeconds);
     StringBuffer metaInfoBlob;
     encodeDFUFileMeta(metaInfoBlob, metaInfo, env);
@@ -6074,6 +6076,23 @@ void CWsDfuEx::dFUFileAccessCommon(IEspContext &context, const CDfsLogicalFileNa
         accessInfo.setExpiryTime(metaInfo->queryProp("expiryTime"));
         accessInfo.setFileAccessPort(metaInfo->getPropInt("port"));
         accessInfo.setFileAccessSSL(metaInfo->getPropBool("secure"));
+
+        CDFUFileType kind = DFUFileType_Undefined;
+        if (isFileKey(fileDesc))
+            kind = CDFUFileType_Index;
+        else
+        {
+            const char *kindStr = queryFileKind(fileDesc);
+            if (streq("flat", kindStr))
+                kind = CDFUFileType_Flat;
+            else if (streq("csv", kindStr))
+                kind = CDFUFileType_Csv;
+            else if (streq("xml", kindStr))
+                kind = CDFUFileType_Xml;
+            else if (streq("json", kindStr))
+                kind = CDFUFileType_Json;
+        }
+        resp.setType(kind);
     }
 
     LOG(daliAuditLogCat,",FileAccess,EspProcess,READ,%s,%s,%s,jobid=%s,expirySecs=%d", cluster.str(), userID.str(), fileName.str(), requestId, expirySecs);
@@ -6092,8 +6111,7 @@ bool CWsDfuEx::onDFUFileAccess(IEspContext &context, IEspDFUFileAccessRequest &r
         lfn.set(requestBase.getName());
         lfn.setCluster(requestBase.getCluster());
 
-        IEspDFUFileAccessInfo &accessInfo = resp.updateAccessInfo();
-        dFUFileAccessCommon(context, lfn, requestBase.getJobId(), requestBase.getExpirySeconds(), returnTextResponse, accessInfo);
+        dFUFileAccessCommon(context, lfn, 0, requestBase.getJobId(), requestBase.getExpirySeconds(), returnTextResponse, 0, resp);
     }
     catch (IException *e)
     {
@@ -6110,8 +6128,7 @@ bool CWsDfuEx::onDFUFileAccessV2(IEspContext &context, IEspDFUFileAccessV2Reques
         lfn.set(req.getName());
         lfn.setCluster(req.getCluster());
 
-        IEspDFUFileAccessInfo &accessInfo = resp.updateAccessInfo();
-        dFUFileAccessCommon(context, lfn, req.getRequestId(), req.getExpirySeconds(), req.getReturnTextResponse(), accessInfo);
+        dFUFileAccessCommon(context, lfn, req.getSessionId(), req.getRequestId(), req.getExpirySeconds(), req.getReturnTextResponse(), req.getLockTimeoutMs(), resp);
     }
     catch (IException *e)
     {
@@ -6365,6 +6382,27 @@ bool CWsDfuEx::onDFUFileCreateV2(IEspContext &context, IEspDFUFileCreateV2Reques
             fileDesc->queryProperties().setProp("@owner", userId);
         fileDesc->queryProperties().setProp("ECL", recordDefinition);
 
+        CDFUFileType kind = req.getType();
+        switch (kind)
+        {
+            case CDFUFileType_Flat:
+                fileDesc->queryProperties().setProp("@kind", "flat");
+                break;
+            case CDFUFileType_Csv:
+                fileDesc->queryProperties().setProp("@kind", "csv");
+                break;
+            case CDFUFileType_Xml:
+                fileDesc->queryProperties().setProp("@kind", "xml");
+                break;
+            case CDFUFileType_Json:
+                fileDesc->queryProperties().setProp("@kind", "json");
+                break;
+            case CDFUFileType_Index:
+                fileDesc->queryProperties().setProp("@kind", "key");
+            default:
+                break; // unknown
+        }
+
         MemoryBuffer layoutBin;
         exportRecordDefinitionBinaryType(recordDefinition, layoutBin);
         if (0 == layoutBin.length())
@@ -6513,17 +6551,18 @@ bool CWsDfuEx::onDFUFilePublish(IEspContext &context, IEspDFUFilePublishRequest 
             userDesc->set(userId.str(), context.queryPassword(), context.querySignature());
             fileDesc->queryProperties().setProp("@owner", userId);
         }
-        Owned<IDistributedFile> df = queryDistributedFileDirectory().lookup(newFileName, userDesc, false, false, true);
+        Owned<IDistributedFile> df = queryDistributedFileDirectory().lookup(newFileName, userDesc, false, false, true, nullptr, req.getLockTimeoutMs());
         if (df)
         {
             if (!req.getOverwrite())
                 throw makeStringExceptionV(ECLWATCH_FILE_ALREADY_EXISTS, "DFUFilePublish: File already exists (%s) and overwrite not specified.", newFileName.str());
-            df->detach(30000);
+            df->detach(req.getLockTimeoutMs());
         }
 
         newFile.setown(queryDistributedFileDirectory().createNew(fileDesc));
         newFile->validate();
         newFile->setAccessed();
+        // JCSMORE attach() should have a timeout, then req.getLockTimeoutMs() should be used here.
         newFile->attach(normalizeTempFileName, userDesc);
 
         if (!newFile->renamePhysicalPartFiles(newFileName, nullptr, nullptr, fileDesc->queryDefaultDir()))

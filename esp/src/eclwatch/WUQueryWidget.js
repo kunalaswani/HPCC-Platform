@@ -7,6 +7,7 @@ define([
     "dojo/date",
     "dojo/topic",
     "dojo/aspect",
+    "dojo/dom-class",
 
     "dijit/registry",
     "dijit/Menu",
@@ -43,7 +44,7 @@ define([
     "dijit/ToolbarSeparator",
     "dijit/TooltipDialog"
 
-], function (declare, lang, i18n, nlsHPCC, arrayUtil, date, topic, aspect,
+], function (declare, lang, i18n, nlsHPCC, arrayUtil, date, topic, aspect, domClass,
     registry, Menu, MenuItem, MenuSeparator, PopupMenuItem,
     selector,
     _TabContainerWidget, WsWorkunits, ESPUtil, ESPWorkunit, DelayLoadWidget, TargetSelectWidget, FilterDropDownWidget, Utility, Clippy,
@@ -256,6 +257,11 @@ define([
                     retVal.StartDate = date.add(now, "day", retVal.LastNDays * -1).toISOString();
                     retVal.EndDate = now.toISOString();
                 }
+                if (retVal.Type === "archived workunits") {
+                    lang.mixin(retVal, {
+                        timeOutSeconds: 300
+                    });
+                }
                 return retVal;
             },
 
@@ -294,6 +300,7 @@ define([
                 });
                 this.filter.on("apply", function (evt) {
                     context.refreshHRef();
+                    context.workunitsGrid._currentPage = 0;
                     context.refreshGrid();
                 });
 
@@ -469,7 +476,13 @@ define([
                         Cluster: { label: this.i18n.Cluster, width: 90 },
                         RoxieCluster: { label: this.i18n.RoxieCluster, width: 99 },
                         State: { label: this.i18n.State, width: 90 },
-                        TotalClusterTime: { label: this.i18n.TotalClusterTime, width: 117 }
+                        TotalClusterTime: {
+                            label: this.i18n.TotalClusterTime, width: 117,
+                            renderCell: function (object, value, node, options) {
+                                domClass.add(node, "justify-right");
+                                node.innerText = value;
+                            }
+                        },
                     }
                 }, this.id + "WorkunitsGrid");
                 this.workunitsGrid.on(".dgrid-row-url:click", function (evt) {

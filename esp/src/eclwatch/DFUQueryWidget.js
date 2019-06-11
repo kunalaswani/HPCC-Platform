@@ -447,18 +447,13 @@ define([
                     this.checkIfWarning();
                 }
 
-                ESPUtil.MonitorVisibility(this.workunitsTab, function (visibility) {
-                    if (visibility) {
-                        context.checkIfWarning();
-                    }
-                });
-
                 this.filter.on("clear", function (evt) {
                     context.refreshHRef();
                     context.refreshGrid();
                 });
                 this.filter.on("apply", function (evt) {
                     context.refreshHRef();
+                    context.workunitsGrid._currentPage = 0;
                     context.refreshGrid();
                 });
                 topic.subscribe("hpcc/dfu_wu_completed", function (topic) {
@@ -660,23 +655,32 @@ define([
                                 return node;
                             }
                         }),
-                        Owner: { label: this.i18n.Owner, width: 72 },
+                        Owner: { label: this.i18n.Owner, width: 75 },
                         SuperOwners: { label: this.i18n.SuperOwner, width: 150 },
-                        Description: { label: this.i18n.Description, width: 153 },
+                        Description: { label: this.i18n.Description, width: 150 },
                         NodeGroup: { label: this.i18n.Cluster, width: 108 },
-                        RecordCount: { label: this.i18n.Records, width: 72 },
+                        RecordCount: {
+                            label: this.i18n.Records, width: 85,
+                            renderCell: function (object, value, node, options) {
+                                domClass.add(node, "justify-right");
+                                node.innerText = Utility.valueCleanUp(value);
+                            },
+                        },
                         IntSize: {
                             label: this.i18n.Size, width: 100,
-                            formatter: function (intsize, row) {
-                                if (intsize === null || intsize === undefined) {
-                                    return 0;
-                                } else {
-                                    return Utility.convertedSize(intsize);
-                                }
-                            }
+                            renderCell: function (object, value, node, options) {
+                                domClass.add(node, "justify-right");
+                                node.innerText = Utility.convertedSize(value);
+                            },
                         },
-                        Parts: { label: this.i18n.Parts, width: 45 },
-                        Modified: { label: this.i18n.ModifiedUTCGMT, width: 155 }
+                        Parts: {
+                            label: this.i18n.Parts, width: 60,
+                            renderCell: function (object, value, node, options) {
+                                domClass.add(node, "justify-right");
+                                node.innerText = Utility.valueCleanUp(value);
+                            },
+                        },
+                        Modified: { label: this.i18n.ModifiedUTCGMT, width: 162 }
                     }
                 }, this.id + "WorkunitsGrid");
                 this.workunitsGrid.on(".dgrid-row-url:click", function (evt) {

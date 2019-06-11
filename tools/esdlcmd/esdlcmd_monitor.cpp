@@ -267,7 +267,9 @@ public:
         createMonitoringTemplate(monTemplate, depTree, optMethod);
 
         VStringBuffer templatefile("monitor_template_%s.xml", optMethod.str());
-        saveAsFile(".", templatefile, monTemplate);
+        if (!optOutDirPath.isEmpty())
+            recursiveCreateDirectory(optOutDirPath);
+        saveAsFile(optOutDirPath.isEmpty()?".":optOutDirPath, templatefile, monTemplate);
         return 0;
     }
 
@@ -301,7 +303,7 @@ public:
 class EsdlMonitorCmd : public EsdlConvertCmd
 {
 public:
-    EsdlMonitorCmd() : optFlags(DEPFLAG_COLLAPSE|DEPFLAG_ARRAYOF){}
+    EsdlMonitorCmd() : optFlags(DEPFLAG_COLLAPSE|DEPFLAG_ARRAYOF), optCassConsistency("LOCAL_QUORUM"){}
 
     virtual bool parseCommandLineOptions(ArgvIterator &iter)
     {
@@ -333,11 +335,15 @@ public:
             }
             else
             {
+                if (iter.matchFlag(optNoExport, ESDLOPT_NO_EXPORT))
+                    continue;
                 if (iter.matchOption(optXsltPath, ESDLOPT_XSLT_PATH))
                     continue;
                 if (iter.matchFlag(optOutputCategoryList, ESDLOPT_OUTPUT_CATEGORIES))
                     continue;
                 if (EsdlConvertCmd::parseCommandLineOption(iter))
+                    continue;
+                if (iter.matchOption(optCassConsistency, ESDL_OPTION_CASSANDRA_CONSISTENCY))
                     continue;
                 if (EsdlConvertCmd::matchCommandLineOption(iter, true)!=EsdlCmdOptionMatch)
                     return false;
@@ -971,8 +977,12 @@ public:
 
         xml.append("\n</esxdl>");
 
+        if (!optOutDirPath.isEmpty())
+            recursiveCreateDirectory(optOutDirPath);
+        StringAttr outdir(optOutDirPath.isEmpty()?".":optOutDirPath);
+
         VStringBuffer filename("esdl_rollup_monitor_%s.xml", optMethod.str());
-        saveAsFile(".", filename, xml);
+        saveAsFile(outdir, filename, xml);
 
         Owned<IPropertyTree> depTree = createPTreeFromXMLString(xml, ipt_ordered);
 
@@ -1037,7 +1047,7 @@ public:
         toXML(depTree, xml.clear()); //refresh changes
 
         filename.setf("%s_preprocess.xml", optMethod.str());
-        saveAsFile(".", filename, xml);
+        saveAsFile(outdir, filename, xml);
 
         Owned<IXslProcessor> xslp = getXslProcessor();
         Owned<IXslTransform> xform = xslp->createXslTransform();
@@ -1049,15 +1059,22 @@ public:
         StringBuffer stringvar;
         xform->setParameter("requestType", stringvar.setf("'%s'", depTree->queryProp(xpath.setf("EsdlMethod[@name='%s']/@request_type", optMethod.str()))));
         xform->setParameter("queryName", stringvar.setf("'%s'", monitoringTemplate->queryProp("@queryName")));
+        xform->setParameter("cass_consistency", stringvar.setf("'%s'", optCassConsistency.str()));
 
         StringBuffer ecl;
 
         StringBuffer escapedTemplate;
         appendEscapedEclString(escapedTemplate, diffTemplateContent);
 
+        StringBuffer definitionName;
+
+        definitionName.setf("Monitor_ActiveTemplate_%s", optMethod.str());
+        if (!optNoExport)
+            ecl.setf("EXPORT %s() := MACRO\n", definitionName.str());
         ecl.appendf("STRING monitoringTemplate :='%s';\nBOOLEAN IncludeTemplate := false : STORED('IncludeTemplate');\nIF (IncludeTemplate, OUTPUT(monitoringTemplate, NAMED('MonitoringTemplate')));\nOUTPUT(HASHMD5(monitoringTemplate), NAMED('Hash'));\n", escapedTemplate.str());
-        filename.setf("Monitor_ActiveTemplate_%s.ecl", optMethod.str());
-        saveAsFile(".", filename, ecl);
+        if (!optNoExport)
+            ecl.append("ENDMACRO;\n");
+        saveAsFile(outdir, definitionName, ecl, ".ecl");
 
         if (optOutputCategoryList)
             xform->setParameter("listCategories", "true()");
@@ -1068,61 +1085,76 @@ public:
 //-------Monitor::Create---------
         xform->setParameter("diffaction", "'Create'");
 
+
+        definitionName.setf("MonitorRoxie_create_%s", optMethod.str());
+        if (!optNoExport)
+            xform->setParameter("definitionName", stringvar.setf("'%s'", definitionName.str()));
         xform->setParameter("platform", "'roxie'");
         xform->setParameter("responseType", stringvar.setf("'%s'", resp_type.str()));
         xform->setParameter("skipResponseTag", "false()");
         xform->transform(ecl.clear());
-        filename.setf("MonitorRoxie_create_%s.ecl", optMethod.str());
-        saveAsFile(".", filename, ecl);
+        saveAsFile(outdir, definitionName, ecl, ".ecl");
 
+        definitionName.setf("MonitorESP_create_%s", optMethod.str());
+        if (!optNoExport)
+            xform->setParameter("definitionName", stringvar.setf("'%s'", definitionName.str()));
         xform->setParameter("platform", "'esp'");
         xform->setParameter("responseType", stringvar.setf("'%s'", esp_resp_type.str()));
         xform->setParameter("skipResponseTag", skipOutputResponseTag ? "true()" : "false()");
         xform->transform(ecl.clear());
-        filename.setf("MonitorESP_create_%s.ecl", optMethod.str());
-        saveAsFile(".", filename, ecl);
+        saveAsFile(outdir, definitionName, ecl, ".ecl");
 
 //-------Monitor::Run---------
         xform->setParameter("diffaction", "'Run'");
 
+        definitionName.setf("MonitorRoxie_run_%s", optMethod.str());
+        if (!optNoExport)
+            xform->setParameter("definitionName", stringvar.setf("'%s'", definitionName.str()));
         xform->setParameter("platform", "'roxie'");
         xform->setParameter("responseType", stringvar.setf("'%s'", resp_type.str()));
         xform->setParameter("skipResponseTag", "false()");
         xform->transform(ecl.clear());
-        filename.setf("MonitorRoxie_run_%s.ecl", optMethod.str());
-        saveAsFile(".", filename, ecl);
+        saveAsFile(outdir, definitionName, ecl, ".ecl");
 
+        definitionName.setf("MonitorESP_run_%s", optMethod.str());
+        if (!optNoExport)
+            xform->setParameter("definitionName", stringvar.setf("'%s'", definitionName.str()));
         xform->setParameter("platform", "'esp'");
         xform->setParameter("responseType", stringvar.setf("'%s'", esp_resp_type.str()));
         xform->setParameter("skipResponseTag", skipOutputResponseTag ? "true()" : "false()");
         xform->transform(ecl.clear());
-        filename.setf("MonitorESP_run_%s.ecl", optMethod.str());
-        saveAsFile(".", filename, ecl);
+        saveAsFile(outdir, definitionName, ecl, ".ecl");
 
 //-------Monitor::Demo---------
         xform->setParameter("diffaction", "'Demo'");
 
+        definitionName.setf("MonitorRoxie_demo_%s", optMethod.str());
+        if (!optNoExport)
+            xform->setParameter("definitionName", stringvar.setf("'%s'", definitionName.str()));
         xform->setParameter("platform", "'roxie'");
         xform->setParameter("responseType", stringvar.setf("'%s'", resp_type.str()));
         xform->setParameter("skipResponseTag", "false()");
         xform->transform(ecl.clear());
-        filename.setf("MonitorRoxie_demo_%s.ecl", optMethod.str());
-        saveAsFile(".", filename, ecl);
+        saveAsFile(outdir, definitionName, ecl, ".ecl");
 
+        definitionName.setf("MonitorESP_demo_%s", optMethod.str());
+        if (!optNoExport)
+            xform->setParameter("definitionName", stringvar.setf("'%s'", definitionName.str()));
         xform->setParameter("platform", "'esp'");
         xform->setParameter("responseType", stringvar.setf("'%s'", esp_resp_type.str()));
         xform->setParameter("skipResponseTag", skipOutputResponseTag ? "true()" : "false()");
         xform->transform(ecl.clear());
-        filename.setf("MonitorESP_demo_%s.ecl", optMethod.str());
-        saveAsFile(".", filename, ecl);
+        saveAsFile(outdir, definitionName, ecl, ".ecl");
 
 //-------Compare---------
+        definitionName.setf("Compare_%s", optMethod.str());
+        if (!optNoExport)
+            xform->setParameter("definitionName", stringvar.setf("'%s'", definitionName.str()));
         xform->setParameter("diffmode", "'Compare'");
         xform->setParameter("responseType", stringvar.setf("'%s'", resp_type.str()));
         xform->setParameter("skipResponseTag", "false()");
         xform->transform(ecl.clear());
-        filename.setf("Compare_%s.ecl", optMethod.str());
-        saveAsFile(".", filename, ecl);
+        saveAsFile(outdir, definitionName, ecl, ".ecl");
 
         return 0;
     }
@@ -1140,8 +1172,11 @@ public:
         puts("  <methodName>     Name of method to use as defined in the specified service.");
         puts("  <diffTemplate>   The template that specifies the differencing and monitoring rules usedto generate the result");
         puts("                   differencing and monitoring ECL code for the given service method.\n" );
+        puts("Options:");
+        puts("  --no-export      Do not export ECL definition from generated ECL files" );
 
         puts(ESDLOPT_INCLUDE_PATH_USAGE);
+        puts("   --cassandra-consistency <consistency>  Consistency value to use for Cassandra statements\n");
         EsdlConvertCmd::usage();
     }
 
@@ -1159,8 +1194,10 @@ public:
     StringAttr optService;
     StringAttr optXsltPath;
     StringAttr optMethod;
+    StringAttr optCassConsistency;
     unsigned optFlags;
     bool optOutputCategoryList=false;  //hidden option, do not document
+    bool optNoExport = false;
 };
 
 

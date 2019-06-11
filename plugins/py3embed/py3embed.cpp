@@ -418,23 +418,25 @@ public:
     {
         // Errors from compiler tend to look like this:
         // "('invalid syntax', ('<embed>', 3, 12, '     sfsf ss fs dfs f sfs\n'))"
-        const char pattern [] = "\\(\\'(.*)\\', \\(\\'.*\\', ([0-9]*), ([0-9]*), (.*)\\)\\)";
+        const char pattern [] = "\\('(.*)', \\('.*', ([0-9]*), ([0-9]*), (.*)\\)\\)";
         // Hopefully there are no embedded quotes in the error message or the filename
-        std::regex regex(pattern);
-        std::cmatch matches;
-        if (std::regex_match(error, matches, regex))
+        rtlCompiledStrRegex r;
+        size32_t outlen;
+        char * out = NULL;
+        r.setPattern(pattern, false);
+        r->replace(outlen, out, strlen(error), error, 2, "$2");
+        if (outlen < strlen(error))
         {
-            assertex(matches.size()==5);  // matches 0 is the whole string
-            std::string err = matches.str(1);
-            unsigned line = atoi(matches.str(2).c_str());
-            unsigned col = atoi(matches.str(3).c_str());
-            std::string extra = matches.str(4);
+            unsigned line = atoi(out);
+            rtlFree(out);
             if (line > leadingLines)
                 line--;
-            return ret.appendf("(%u, %u): %s: %s", line, col, err.c_str(), extra.c_str());
+            r->replace(outlen, out, strlen(error), error, 13, ", $3): $1: $4");
+            ret.appendf("(%d", line);
         }
-        else
-            return ret.append(error);
+        ret.append(outlen, out);
+        rtlFree(out);
+        return ret;
     }
     PyObject *compileScript(const char *text, const char *parameters)
     {
@@ -1170,6 +1172,42 @@ protected:
     PythonThreadContext *sharedCtx;
 };
 
+//----------------------------------------------------------------------
+
+// GILBlock ensures the we hold the Python "Global interpreter lock" for the appropriate duration
+
+class GILBlock
+{
+public:
+    GILBlock(PyThreadState * &_state) : state(_state)
+    {
+        PyEval_RestoreThread(state);
+    }
+    ~GILBlock()
+    {
+        state = PyEval_SaveThread();
+    }
+private:
+    PyThreadState * &state;
+};
+
+
+// GILUnblock ensures the we release the Python "Global interpreter lock" for the appropriate duration
+
+class GILUnblock
+{
+public:
+    GILUnblock()
+    {
+        state = PyEval_SaveThread();
+    }
+    ~GILUnblock()
+    {
+        PyEval_RestoreThread(state);
+    }
+private:
+    PyThreadState *state;
+};
 
 //----------------------------------------------------------------------
 
@@ -1193,6 +1231,7 @@ void ECLDatasetIterator_dealloc(PyObject *self)
     ECLDatasetIterator *p = (ECLDatasetIterator *)self;
     if (p->val)
     {
+        GILUnblock b;
         p->val->stop();
         ::Release(p->val);
         p->val = NULL;
@@ -1203,27 +1242,32 @@ void ECLDatasetIterator_dealloc(PyObject *self)
 PyObject* ECLDatasetIterator_iternext(PyObject *self)
 {
     ECLDatasetIterator *p = (ECLDatasetIterator *)self;
+    roxiemem::OwnedConstRoxieRow nextRow;
     if (p->val)
     {
-        roxiemem::OwnedConstRoxieRow nextRow = p->val->ungroupedNextRow();
+        GILUnblock b;
+        nextRow.setown(p->val->ungroupedNextRow());
         if (!nextRow)
         {
             p->val->stop();
             ::Release(p->val);
             p->val = NULL;
         }
-        else
-        {
-            RtlFieldStrInfo dummyField("<row>", NULL, p->typeInfo);
-            PythonNamedTupleBuilder tupleBuilder(NULL, &dummyField);
-            const byte *brow = (const byte *) nextRow.get();
-            p->typeInfo->process(brow, brow, &dummyField, tupleBuilder);
-            return tupleBuilder.getTuple(p->typeInfo);
-        }
     }
-    // If we get here, it's EOF
-    PyErr_SetNone(PyExc_StopIteration);
-    return NULL;
+    if (p->val)
+    {
+        RtlFieldStrInfo dummyField("<row>", NULL, p->typeInfo);
+        PythonNamedTupleBuilder tupleBuilder(NULL, &dummyField);
+        const byte *brow = (const byte *) nextRow.get();
+        p->typeInfo->process(brow, brow, &dummyField, tupleBuilder);
+        return tupleBuilder.getTuple(p->typeInfo);
+    }
+    else
+    {
+        // If we get here, it's EOF
+        PyErr_SetNone(PyExc_StopIteration);
+        return NULL;
+    }
 }
 
 static PyTypeObject ECLDatasetIteratorType =
@@ -1275,22 +1319,6 @@ static PyObject *createECLDatasetIterator(const RtlTypeInfo *_typeInfo, IRowStre
 
 //-----------------------------------------------------
 
-// GILBlock ensures the we hold the Python "Global interpreter lock" for the appropriate duration
-
-class GILBlock
-{
-public:
-    GILBlock(PyThreadState * &_state) : state(_state)
-    {
-        PyEval_RestoreThread(state);
-    }
-    ~GILBlock()
-    {
-        state = PyEval_SaveThread();
-    }
-private:
-    PyThreadState * &state;
-};
 
 void Python3xGlobalState::unregister(const char *key)
 {

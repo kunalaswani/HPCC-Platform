@@ -27,7 +27,7 @@ class SWBackupNode : public SWProcess
 {
 public:
     SWBackupNode(const char* name, EnvHelper * envHelper);
-    virtual unsigned add(IPropertyTree *params);
+    virtual void addOtherSelector(IPropertyTree *compTree, IPropertyTree *params);
 
 //protected:
 
