@@ -663,6 +663,7 @@ define({root:
     SetTextError: "Failed to display text (too large?).  Use &lsquo;helpers&rsquo; to download.",
     SetToFailed: "Set To Failed",
     Severity: "Severity",
+    ShareWorkunit:"Share Workunit",
     Show: "Show",
     ShowProcessesUsingFilter: "Show Processes Using Filter",
     ShowSVG: "Show SVG",

@@ -134,6 +134,7 @@ define([
                 this.zapDialog = registry.byId(this.id + "ZapDialog");
 
                 Clippy.attach(this.id + "ClippyButton");
+                Clippy.attach(this.id + "ShareButton");
 
                 this.wuStatus = new WUStatusModule.WUStatus()
                     .baseUrl("")
@@ -338,6 +339,16 @@ define([
                 this.protected.on("change", function (evt) {
                     context._onSave();
                 })
+
+                this.ShareButton = registry.byId(this.id + "ShareButton");
+                Clippy.attachDomNode(this.ShareButton.domNode, function () {
+                    var copyURL = [];
+                    arrayUtil.forEach(context.workunitsGrid.getSelected(), function (item, idx) {
+                        copyURL.push(window.location.href());
+                    });
+                    return copyURL.join("\n");
+                });
+                this.refreshActionState();
             },
 
             initTab: function () {
