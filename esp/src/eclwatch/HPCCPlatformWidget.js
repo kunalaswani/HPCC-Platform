@@ -34,6 +34,7 @@ define([
     "src/ws_machine",
     "hpcc/LockDialogWidget",
     "src/UserPreferences/EnvironmentTheme",
+    "src/react/index",
 
     "dojo/text!../templates/HPCCPlatformWidget.html",
 
@@ -61,7 +62,7 @@ define([
     registry, Tooltip,
     UpgradeBar, ColorPicker,
     CodeMirror,
-    _TabContainerWidget, ESPRequest, ESPActivity, ESPUtil, WsAccount, WsAccess, WsSMC, WsTopology, WsMachine, LockDialogWidget, EnvironmentTheme,
+    _TabContainerWidget, ESPRequest, ESPActivity, ESPUtil, WsAccount, WsAccess, WsSMC, WsTopology, WsMachine, LockDialogWidget, EnvironmentTheme, srcReact,
     template) {
 
     declare("HPCCColorPicker", [ColorPicker], {
@@ -94,8 +95,8 @@ define([
             this.errWarnPage = registry.byId(this.id + "_ErrWarn");
             this.pluginsPage = registry.byId(this.id + "_Plugins");
             this.operationsPage = registry.byId(this.id + "_OPS");
-            registry.byId(this.id + "SetBanner").set("disabled", true);
-            registry.byId(this.id + "SetToolbar").set("disabled", true);
+            //registry.byId(this.id + "SetBanner").set("disabled", true);
+            //registry.byId(this.id + "SetToolbar").set("disabled", true);
             this.sessionBackground = registry.byId(this.id + "SessionBackground");
             this.unlockDialog = registry.byId(this.id + "UnlockDialog");
             this.unlockUserName = registry.byId(this.id + "UnlockUserName");
@@ -152,22 +153,25 @@ define([
             }
         },
 
-        refreshUserName: function () {
-            if (this.userName) {
-                dom.byId(this.id + "UserID").textContent = this.userName;
-            } else if (cookie("ESPUserName")) {
-                domConstruct.place("<span>" + cookie("ESPUserName") + "</span>", this.id + "UserID", "replace");
-                dojoConfig.username = cookie("ESPUserName");
-            } else {
-                dom.byId(this.id + "UserID").textContent = "";
-            }
-        },
+        // refreshUserName: function () {
+        //     if (this.userName) {
+        //         dom.byId(this.id + "UserID").textContent = this.userName;
+        //     } else if (cookie("ESPUserName")) {
+        //         domConstruct.place("<span>" + cookie("ESPUserName") + "</span>", this.id + "UserID", "replace");
+        //         dojoConfig.username = cookie("ESPUserName");
+        //     } else {
+        //         dom.byId(this.id + "UserID").textContent = "";
+        //     }
+        // },
 
         init: function (params) {
             if (this.inherited(arguments))
                 return;
 
             var context = this;
+
+            this.userMenu = dom.byId(this.id + "UserMenu");
+            srcReact.render(srcReact.UserMenu, { passedInText: "hello" }, this.userMenu);
 
             WsMachine.GetComponentStatus({
                 request: {}
@@ -188,7 +192,7 @@ define([
                     dojoConfig.username = response.MyAccountResponse.username;
                     cookie("User", response.MyAccountResponse.username);
                     context.checkIfAdmin(context.userName);
-                    context.refreshUserName();
+                    //context.refreshUserName();
                     if (!cookie("PasswordExpiredCheck")) {
                         cookie("PasswordExpiredCheck", "true", { expires: 1 });
                         if (lang.exists("MyAccountResponse.passwordDaysRemaining", response)) {
@@ -241,7 +245,7 @@ define([
             this.createStackControllerTooltip(this.id + "_OPS", this.i18n.Operations);
             this.createStackControllerTooltip(this.id + "_Plugins", this.i18n.Plugins);
             this.initTab();
-            this.checkIfSessionsAreActive();
+            //this.checkIfSessionsAreActive();
 
             topic.subscribe("hpcc/monitoring_component_update", function (topic) {
                 context.checkMonitoring(topic.status);
@@ -311,8 +315,8 @@ define([
                     if (lang.exists("UserEditResponse.isLDAPAdmin", response)) {
                         if (response.UserEditResponse.isLDAPAdmin === true) {
                             dojoConfig.isAdmin = true;
-                            registry.byId(context.id + "SetBanner").set("disabled", false);
-                            registry.byId(context.id + "SetToolbar").set("disabled", false);
+                            //registry.byId(context.id + "SetBanner").set("disabled", false);
+                            //registry.byId(context.id + "SetToolbar").set("disabled", false);
                             if (context.widget._OPS.refresh) {
                                 context.widget._OPS.refresh();
                             }
@@ -337,14 +341,14 @@ define([
             }
         },
 
-        checkIfSessionsAreActive: function () {
-            if (cookie("ESPSessionTimeoutSeconds")) {
-                this.logoutBtn.set("disabled", false);
-                this.lockBtn.set("disabled", false);
-                dom.byId("UserDivider").textContent = " / ";
-                dom.byId("Lock").textContent = this.i18n.Lock;
-            }
-        },
+        // checkIfSessionsAreActive: function () {
+        //     if (cookie("ESPSessionTimeoutSeconds")) {
+        //         this.logoutBtn.set("disabled", false);
+        //         this.lockBtn.set("disabled", false);
+        //         dom.byId("UserDivider").textContent = " / ";
+        //         dom.byId("Lock").textContent = this.i18n.Lock;
+        //     }
+        // },
 
         setEnvironmentTheme: function () {
             EnvironmentTheme.setEnvironmentTheme(this.id, this);
