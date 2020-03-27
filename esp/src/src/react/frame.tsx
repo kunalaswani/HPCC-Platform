@@ -21,7 +21,7 @@ export function Frame() {
                         <MenuIcon />
                     </IconButton>
                     <Typography variant="h6">
-                        ECL Watch
+                        Hello World
                     </Typography>
                 </Toolbar>
             </AppBar>
