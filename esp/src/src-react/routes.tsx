@@ -225,6 +225,11 @@ export const routes: RoutesEx = [
         ]
     },
     {
+        mainNav: ["topology"],
+        path: "/daliadmin", action: (ctx, params) => import("./components/DaliAdmin").then(_ => <_.DaliAdmin />) 
+
+    },
+    {
         mainNav: [],
         path: "/errors", action: () => import("./layouts/DojoAdapter").then(_ => <_.DojoAdapter widgetClassID="InfoGridWidget" />)
     },

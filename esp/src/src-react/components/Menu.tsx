@@ -151,6 +151,7 @@ const subMenuItems: SubMenuItems = {
         { headerText: nlsHPCC.Security + " (L)", itemKey: "/security" },
         { headerText: nlsHPCC.Monitoring, itemKey: "/monitoring" },
         { headerText: nlsHPCC.DESDL + " (L)", itemKey: "/desdl" },
+        { headerText: nlsHPCC.DaliAdmin, itemKey: "/daliadmin",}
     ],
 };
 
