@@ -15,20 +15,16 @@ export const GetDFSCSV: React.FunctionComponent<GetDFSCSVProps> = ({
 
 }) => {
 
-    const [_dfsCsv, setDfsCsv] = React.useState<any[]>([]);
+    const [dfsCsv, setDfsCsv] = React.useState<string>("");
 
     React.useEffect(() => {
-        daliService.GetDFSCSV({}).then(({ GetDFSCSVResponse }) => {
-            setDfsCsv(GetDFSCSVResponse.TpGroup.map(n => {
-                return {
-                    logicalNameMask
-                };
-            }));
+        daliService.GetDFSCSV({LogicalNameMask:""}).then(( response ) => {
+            setDfsCsv(response.Result);
         }).catch(err => logger.error(err));
     }, []);
 
-    return <>
-        GetDFSCSV content
-    </>;
+    return <div>
+        {dfsCsv}
+    </div>;
 
 }; 

@@ -1,26 +1,30 @@
-// import * as React from "react";
-// import { WsDali, DaliService } from "@hpcc-js/comms";
+import * as React from "react";
+import { DaliService } from "@hpcc-js/comms";
+import { scopedLogger } from "@hpcc-js/util";
 
-// const daliService = new DaliService({ baseUrl: "" });
+const logger = scopedLogger("src-react/components/GetValue.tsx");
 
-// interface GetValueProps {
+const daliService = new DaliService({ baseUrl: "" });
 
-// }
 
-// export const GetValue: React.FunctionComponent<GetValueProps> = ({
+interface GetValueProps {
 
-// }) => {
+}
 
-//     const [value, setValue] = React.useState<any[]>([]);
+export const GetValue: React.FunctionComponent<GetValueProps> = ({
 
-//     React.useEffect(() => {
-//         daliService.GetValue({}).then(({ Result }) => {
-//             // format Result data setDfsCsv to that formatted data
-//         });
-//     }, []);
+}) => {
 
-//     return <>
-//         GetValue content
-//     </>;
+    const [getValue, setGetValue] = React.useState<string>("");
 
-// }; 
+    React.useEffect(() => {
+        daliService.GetValue({Path:""}).then(( response ) => {
+            setGetValue(response.Result);
+        }).catch(err => logger.error(err));
+    }, []);
+
+    return <div>
+        {getValue}
+    </div>;
+
+}; 

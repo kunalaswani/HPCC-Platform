@@ -3,7 +3,13 @@ import { Pivot, PivotItem } from "@fluentui/react";
 import { SizeMe } from "react-sizeme";
 import { pushUrl } from "../util/history";
 import { pivotItemStyle } from "../layouts/pivot";
-import { GetDFSCSV } from "src/WsDali";
+import { GetDFSCSV } from "./GetDFSCSV";
+import { GetDFSMap } from "./GetDFSMap";
+import { GetDFSParents } from "./GetDFSParents";
+import { GetLogicalFile } from "./GetLogicalFile";
+import { GetLogicalFilePart } from "./GetLogicalFilePart";
+import { GetProtectedList } from "./GetProtectedList";
+import { GetValue } from "./GetValue";
 import nlsHPCC from "src/nlsHPCC";
 
 interface DaliAdminProps {
@@ -27,22 +33,22 @@ export const DaliAdmin: React.FunctionComponent<DaliAdminProps> = ({
                 <GetDFSCSV />
             </PivotItem>
             <PivotItem headerText={nlsHPCC.GetDFSMap} style={pivotItemStyle(size)} >
-                {/* <GetDFSMap tabname={GetDFSMap} /> */}
+                <GetDFSMap />
             </PivotItem>
             <PivotItem headerText={nlsHPCC.GetDFSParents} style={pivotItemStyle(size)} >
-                {/* <GetDFSParents tabname={GetDFSParents} /> */}
+                <GetDFSParents />
             </PivotItem>
             <PivotItem headerText={nlsHPCC.GetLogicalFile} style={pivotItemStyle(size)} >
-                {/* <GetLogicalFile tabname={GetLogicalFile} /> */}
+                <GetLogicalFile />
             </PivotItem>
             <PivotItem headerText={nlsHPCC.GetLogicalFilePart} style={pivotItemStyle(size)} >
-                {/* <GetLogicalFilePart tabname={GetLogicalFilePart} /> */}
+                <GetLogicalFilePart />
             </PivotItem>
             <PivotItem headerText={nlsHPCC.GetProtectedList} style={pivotItemStyle(size)} >
-                {/* <GetProtectedList tabname={GetProtectedList} /> */}
+                <GetProtectedList />
             </PivotItem>
             <PivotItem headerText={nlsHPCC.GetValue} style={pivotItemStyle(size)} >
-                {/* <GetValue tabname={GetValue} /> */}
+                <GetValue  />
             </PivotItem>
         </Pivot>
     }</SizeMe>;

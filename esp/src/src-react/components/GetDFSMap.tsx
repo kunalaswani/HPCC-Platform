@@ -1,26 +1,30 @@
-// import * as React from "react";
-// import { WsDali, DaliService } from "@hpcc-js/comms";
+import * as React from "react";
+import { DaliService } from "@hpcc-js/comms";
+import { scopedLogger } from "@hpcc-js/util";
 
-// const daliService = new DaliService({ baseUrl: "" });
+const logger = scopedLogger("src-react/components/GetDFSMap.tsx");
 
-// interface GetDFSMapProps {
+const daliService = new DaliService({ baseUrl: "" });
 
-// }
 
-// export const GetDFSMap: React.FunctionComponent<GetDFSMapProps> = ({
+interface GetDFSMapProps {
 
-// }) => {
+}
 
-//     const [dfsMap, setDfsMap] = React.useState<any[]>([]);
+export const GetDFSMap: React.FunctionComponent<GetDFSMapProps> = ({
 
-//     React.useEffect(() => {
-//         daliService.GetDFSMap({}).then(({ Result }) => {
-//             // format Result data setDfsMap to that formatted data
-//         });
-//     }, []);
+}) => {
 
-//     return <>
-//         GetDFSMap content
-//     </>;
+    const [dfsMap, setDfsMap] = React.useState<string>("");
 
-// }; 
+    React.useEffect(() => {
+        daliService.GetDFSMap({FileName:""}).then(( response ) => {
+            setDfsMap(response.Result);
+        }).catch(err => logger.error(err));
+    }, []);
+
+    return <div>
+        {dfsMap}
+    </div>;
+
+}; 

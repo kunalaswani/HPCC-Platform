@@ -1,26 +1,30 @@
-// import * as React from "react";
-// import { WsDali, DaliService } from "@hpcc-js/comms";
+import * as React from "react";
+import { DaliService } from "@hpcc-js/comms";
+import { scopedLogger } from "@hpcc-js/util";
 
-// const daliService = new DaliService({ baseUrl: "" });
+const logger = scopedLogger("src-react/components/GetDFSParents.tsx");
 
-// interface GetDFSParentsProps {
+const daliService = new DaliService({ baseUrl: "" });
 
-// }
 
-// export const GetDFSParents: React.FunctionComponent<GetDFSParentsProps> = ({
+interface GetDFSParentsProps {
 
-// }) => {
+}
 
-//     const [dfsParents, setDfsParents] = React.useState<any[]>([]);
+export const GetDFSParents: React.FunctionComponent<GetDFSParentsProps> = ({
 
-//     React.useEffect(() => {
-//         daliService.GetDFSParents({}).then(({ Result }) => {
-//             // format Result data setDfsParents to that formatted data
-//         });
-//     }, []);
+}) => {
 
-//     return <>
-//         GetDFSParents content
-//     </>;
+    const [dfsParents, setDfsParents] = React.useState<string>("");
 
-// }; 
+    React.useEffect(() => {
+        daliService.GetDFSParents({FileName:""}).then(( response ) => {
+            setDfsParents(response.Result);
+        }).catch(err => logger.error(err));
+    }, []);
+
+    return <div>
+        {dfsParents}
+    </div>;
+
+}; 

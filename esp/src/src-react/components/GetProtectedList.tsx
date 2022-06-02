@@ -1,26 +1,30 @@
-// import * as React from "react";
-// import { WsDali, DaliService } from "@hpcc-js/comms";
+import * as React from "react";
+import { DaliService } from "@hpcc-js/comms";
+import { scopedLogger } from "@hpcc-js/util";
 
-// const daliService = new DaliService({ baseUrl: "" });
+const logger = scopedLogger("src-react/components/GetProtectedList.tsx");
 
-// interface GetProtectedListProps {
+const daliService = new DaliService({ baseUrl: "" });
 
-// }
 
-// export const GetProtectedList: React.FunctionComponent<GetProtectedListProps> = ({
+interface GetProtectedListProps {
 
-// }) => {
+}
 
-//     const [protectedList, setProtectedList] = React.useState<any[]>([]);
+export const GetProtectedList: React.FunctionComponent<GetProtectedListProps> = ({
 
-//     React.useEffect(() => {
-//         daliService.GetProtectedList({}).then(({ Result }) => {
-//             // format Result data setDfsCsv to that formatted data
-//         });
-//     }, []);
+}) => {
 
-//     return <>
-//         GetProtectedList content
-//     </>;
+    const [protectedList, setProtectedList] = React.useState<string>("");
 
-// }; 
+    React.useEffect(() => {
+        daliService.GetProtectedList({FileName:"", CallerId:""}).then(( response ) => {
+            setProtectedList(response.Result);
+        }).catch(err => logger.error(err));
+    }, []);
+
+    return <div>
+        {protectedList}
+    </div>;
+
+}; 

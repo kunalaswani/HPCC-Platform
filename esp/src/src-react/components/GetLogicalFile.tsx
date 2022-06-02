@@ -1,26 +1,30 @@
-// import * as React from "react";
-// import { WsDali, DaliService } from "@hpcc-js/comms";
+import * as React from "react";
+import { DaliService } from "@hpcc-js/comms";
+import { scopedLogger } from "@hpcc-js/util";
 
-// const daliService = new DaliService({ baseUrl: "" });
+const logger = scopedLogger("src-react/components/GetLogicalFile.tsx");
 
-// interface GetLogicalFileProps {
+const daliService = new DaliService({ baseUrl: "" });
 
-// }
 
-// export const GetLogicalFile: React.FunctionComponent<GetLogicalFileProps> = ({
+interface GetLogicalFileProps {
 
-// }) => {
+}
 
-//     const [logicalFile, setLogicalFile] = React.useState<any[]>([]);
+export const GetLogicalFile: React.FunctionComponent<GetLogicalFileProps> = ({
 
-//     React.useEffect(() => {
-//         daliService.GetLogicalFile({}).then(({ Result }) => {
-//             // format Result data setLogicalFile to that formatted data
-//         });
-//     }, []);
+}) => {
 
-//     return <>
-//         GetLogicalFile content
-//     </>;
+    const [LogicalFile, setLogicalFile] = React.useState<string>("");
 
-// }; 
+    React.useEffect(() => {
+        daliService.GetLogicalFile({FileName:""}).then(( response ) => {
+            setLogicalFile(response.Result);
+        }).catch(err => logger.error(err));
+    }, []);
+
+    return <div>
+        {LogicalFile}
+    </div>;
+
+}; 

@@ -1,26 +1,31 @@
-// import * as React from "react";
-// import { WsDali, DaliService } from "@hpcc-js/comms";
+import * as React from "react";
+import { DaliService } from "@hpcc-js/comms";
+import { scopedLogger } from "@hpcc-js/util";
 
-// const daliService = new DaliService({ baseUrl: "" });
+const logger = scopedLogger("src-react/components/GetLogicalFilePart.tsx");
 
-// interface GetLogicalFilePartProps {
+const daliService = new DaliService({ baseUrl: "" });
 
-// }
 
-// export const GetLogicalFilePart: React.FunctionComponent<GetLogicalFilePartProps> = ({
+interface GetLogicalFilePartProps {
 
-// }) => {
+}
 
-//     const [logicalFilePart, setLogicalFilePart] = React.useState<any[]>([]);
+export const GetLogicalFilePart: React.FunctionComponent<GetLogicalFilePartProps> = ({
 
-//     React.useEffect(() => {
-//         daliService.GetLogicalFilePart({}).then(({ Result }) => {
-//             // format Result data setLogicalFile to that formatted data
-//         });
-//     }, []);
+}) => {
 
-//     return <>
-//         GetLogicalFilePart content
-//     </>;
+    const [LogicalFilePart, setLogicalFilePart] = React.useState<string>("");
+    const [partNumber, setPartNumber] = React.useState<number>();
 
-// }; 
+    React.useEffect(() => {
+        daliService.GetLogicalFilePart({FileName:""}).then(( response ) => {
+            setLogicalFilePart(response.Result);
+        }).catch(err => logger.error(err));
+    }, []);
+
+    return <div>
+        {LogicalFilePart}
+    </div>;
+
+}; 
