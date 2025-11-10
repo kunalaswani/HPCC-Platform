@@ -182,6 +182,19 @@ export const Files: React.FunctionComponent<FilesProps> = ({
                 },
                 field: nlsHPCC.Compressed,
             },
+            isSuperfile: {
+                headerIcon: "PageList",
+                headerTooltip: nlsHPCC.Superfile,
+                width: 16,
+                sortable: false,
+                formatter: (_isSuperfile, row) => {
+                    if (row.isSuperfile === true) {
+                        return <Icon iconName="PageList" />;
+                    }
+                    return "";
+                },
+                field: nlsHPCC.Superfile,
+            },
             Name: {
                 label: nlsHPCC.LogicalName,
                 width: 180,
